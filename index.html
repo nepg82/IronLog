@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>IBA Digital Logbook</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff9800">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #ffffff;
+      --accent: #ff9800;
+      --success: #4caf50;
+      --danger: #f44336;
+      --font-family: 'Chakra Petch', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body {
+      font-family: var(--font-family);
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-sizing: border-box;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+    .timer-display {
+      font-size: 15vw;
+      font-weight: 900;
+      color: var(--accent);
+      text-align: center;
+      line-height: 1;
+      margin: 8px 0;
+      letter-spacing: -2px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.1rem;
+    }
+    .flex-row {
+      display: flex;
+      gap: 8px;
+    }
+    .flex-row > div {
+      flex: 1;
+    }
+    button {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 8px;
+      width: 100%;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button.success { background: var(--success); color: #fff; }
+    button.danger { background: var(--danger); color: #fff; }
+    button.secondary { background: #333; color: #ccc; }
+    
+    input[type="number"], input[type="text"], textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.1rem;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #2b2b2b;
+      color: #fff;
+      box-sizing: border-box;
+      margin-top: 6px;
+      font-family: inherit;
+    }
+    textarea {
+      resize: vertical;
+      height: 70px;
+    }
+    .warning-box {
+      color: var(--accent);
+      font-size: 0.95rem;
+      margin-top: 6px;
+      display: none;
+    }
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .file-input-wrapper input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .file-btn {
+      background: #2b2b2b;
+      border: 1px solid #555;
+      color: #fff;
+      text-align: center;
+      padding: 14px;
+      border-radius: 4px;
+      font-size: 1rem;
+      display: block;
+    }
+    .stop-entry {
+      border-bottom: 1px solid #333;
+      padding: 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .stop-entry:active {
+      background: #2a2a2a;
+    }
+    .stop-info { flex-grow: 1; }
+    .chevron {
+      color: var(--accent);
+      font-size: 1.4rem;
+      font-weight: bold;
+      padding-left: 12px;
+    }
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.92);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .receipt-preview {
+      width: 100%;
+      max-height: 250px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #000;
+      border: 1px solid #444;
+      margin-top: 8px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- STEP 1: START RIDE FORM -->
+  <div id="setup-card" class="card">
+    <h2>Start New Ride</h2>
+    <p>Target: 1,000 Miles in 24 Hours</p>
+    
+    <label>Starting City / Location:
+      <input type="text" id="start-location" placeholder="e.g. Chicago, IL">
+    </label>
+    <br><br>
+    <label>Starting Odometer Reading:
+      <input type="number" id="start-odo" placeholder="e.g. 48100">
+    </label>
+    <br><br>
+    <label>Start Receipt Photo:
+      <div class="file-input-wrapper">
+        <span class="file-btn" id="start-file-label">📷 SNAP START RECEIPT</span>
+        <input type="file" id="start-photo" accept="image/*" capture="environment" onchange="updateFileLabel('start-photo', 'start-file-label')">
+      </div>
+    </label>
+    <br><br>
+    <button onclick="startRide()" class="success">LAUNCH RIDE</button>
+  </div>
+
+  <!-- STEP 2: ACTIVE DASHBOARD -->
+  <div id="dash-card" class="card hidden">
+    <div class="timer-display" id="time-remaining">24:00:00</div>
+    <div class="stat-row">
+      <span>Distance: <b id="total-dist">0</b> mi</span>
+      <span>Stops: <b id="stop-count">0</b></span>
+    </div>
+  </div>
+
+  <!-- STEP 3: LOG STOP FORM -->
+  <div id="log-card" class="card hidden">
+    <h3>Log Fuel / Corner Stop</h3>
+    <label>Receipt Photo:
+      <div class="file-input-wrapper">
+        <span class="file-btn" id="stop-file-label">📷 SNAP RECEIPT PHOTO</span>
+        <input type="file" id="stop-photo" accept="image/*" capture="environment" onchange="updateFileLabel('stop-photo', 'stop-file-label')">
+      </div>
+    </label>
+    <br><br>
+    <label>Current Odometer Reading:
+      <input type="number" id="stop-odo" placeholder="e.g. 48310" oninput="validateOdometer()">
+    </label>
+    <div id="odo-warning" class="warning-box"></div>
+    <br>
+    <label>Location / City (Optional):
+      <input type="text" id="stop-location" placeholder="e.g. Des Moines, IA">
+    </label>
+    <br><br>
+    <button id="save-btn" onclick="saveStop()">SAVE STOP</button>
+  </div>
+
+  <!-- RIDE LOG LIST -->
+  <div id="history-card" class="card hidden">
+    <h3>Ride Log (Tap entry to view/edit)</h3>
+    <div id="log-list"></div>
+    <br>
+    <button onclick="toggleSettings()" class="secondary">⚙️ Ride Options & Data</button>
+    
+    <div id="settings-area" class="hidden" style="margin-top: 16px; border-top: 1px dashed #444; padding-top: 16px;">
+      <p style="color: #888; font-size: 0.85rem;">Danger Zone: Resetting will purge all active ride tracking data from local storage.</p>
+      <button onclick="resetRide()" class="danger">RESET ALL DATA</button>
+    </div>
+  </div>
+
+  <!-- FULL DETAIL REVIEW & EDIT MODAL -->
+  <div id="edit-modal" class="modal hidden">
+    <div class="card" style="width: 100%; max-width: 450px; margin: auto;">
+      <h3>Stop #<span id="edit-index-title"></span> Details</h3>
+      <input type="hidden" id="edit-index">
+      
+      <label>Captured Receipt Photo:</label>
+      <img id="edit-photo-preview" class="receipt-preview" src="" alt="Receipt Preview">
+      <div class="file-input-wrapper" style="margin-top: 8px;">
+        <span class="file-btn" style="padding: 8px; font-size: 0.9rem;">📷 Replace Photo</span>
+        <input type="file" id="edit-photo-input" accept="image/*" capture="environment" onchange="handlePhotoReplace()">
+      </div>
+      <br><br>
+
+      <label>Location / City:
+        <input type="text" id="edit-location" placeholder="e.g. Shell - Des Moines, IA">
+      </label>
+      <br><br>
+      <label>Odometer Reading:
+        <input type="number" id="edit-odo">
+      </label>
+      <br><br>
+
+      <div class="flex-row">
+        <div>
+          <label>Gallons:
+            <input type="number" step="0.001" id="edit-gallons" placeholder="e.g. 4.8">
+          </label>
+        </div>
+        <div>
+          <label>Total Cost ($):
+            <input type="number" step="0.01" id="edit-cost" placeholder="e.g. 18.50">
+          </label>
+        </div>
+      </div>
+      <br>
+
+      <label>Notes (Optional):
+        <textarea id="edit-notes" placeholder="e.g. Printer broken, clerk signed receipt."></textarea>
+      </label>
+      <br><br>
+
+      <button onclick="saveEdit()" class="success">SAVE CHANGES</button>
+      <br><br>
+      <button onclick="closeEditModal()" class="secondary">CANCEL</button>
+    </div>
+  </div>
+
+  <script>
+    // Register Service Worker for Offline PWA Support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('PWA Service Worker Registered'))
+        .catch(err => console.error('Service Worker Registration Failed:', err));
+    }
+
+    let rideData = JSON.parse(localStorage.getItem('iba_ride')) || null;
+
+    function init() {
+      if (rideData) {
+        document.getElementById('setup-card').classList.add('hidden');
+        document.getElementById('dash-card').classList.remove('hidden');
+        document.getElementById('log-card').classList.remove('hidden');
+        document.getElementById('history-card').classList.remove('hidden');
+        updateDashboard();
+        setInterval(updateTimer, 1000);
+      }
+    }
+
+    function updateFileLabel(inputId, labelId) {
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(labelId);
+      if (input.files.length > 0) {
+        label.innerText = `✓ PHOTO CAPTURED`;
+        label.style.borderColor = 'var(--success)';
+        label.style.color = 'var(--success)';
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function startRide() {
+      const location = document.getElementById('start-location').value || 'Start Point';
+      const odo = parseFloat(document.getElementById('start-odo').value);
+      const photoInput = document.getElementById('start-photo');
+
+      if (!odo || photoInput.files.length === 0) {
+        alert('Please enter starting odometer and capture a receipt photo.');
+        return;
+      }
+
+      const photoBase64 = await fileToBase64(photoInput.files[0]);
+
+      rideData = {
+        startTime: Date.now(),
+        startOdo: odo,
+        stops: [{
+          type: 'START',
+          timestamp: Date.now(),
+          odo: odo,
+          legDist: 0,
+          location: location,
+          photoData: photoBase64,
+          gallons: '',
+          cost: '',
+          notes: ''
+        }]
+      };
+
+      localStorage.setItem('iba_ride', JSON.stringify(rideData));
+      location.reload();
+    }
+
+    function updateTimer() {
+      if (!rideData) return;
+      const elapsedMs = Date.now() - rideData.startTime;
+      const totalMs = 24 * 60 * 60 * 1000;
+      const remainingMs = totalMs - elapsedMs;
+
+      if (remainingMs <= 0) {
+        document.getElementById('time-remaining').innerText = "00:00:00";
+        return;
+      }
+
+      const hrs = Math.floor(remainingMs / (1000 * 60 * 60));
+      const mins = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((remainingMs % (1000 * 60)) / 1000);
+
+      document.getElementById('time-remaining').innerText = 
+        `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function validateOdometer() {
+      const inputOdo = parseFloat(document.getElementById('stop-odo').value);
+      const warningBox = document.getElementById('odo-warning');
+      const lastOdo = rideData.stops[rideData.stops.length - 1].odo;
+
+      if (!inputOdo) {
+        warningBox.style.display = 'none';
+        return;
+      }
+
+      const leg = inputOdo - lastOdo;
+
+      if (leg <= 0) {
+        warningBox.innerText = `⚠️ Reading is less than or equal to previous stop (${lastOdo}).`;
+        warningBox.style.display = 'block';
+      } else if (leg > 350) {
+        warningBox.innerText = `⚠️ Calculated leg is ${leg} miles (>350 max). Did you fat-finger a digit?`;
+        warningBox.style.display = 'block';
+      } else {
+        warningBox.innerText = `Calculated leg: ${leg} miles.`;
+        warningBox.style.display = 'block';
+      }
+    }
+
+    async function saveStop() {
+      const photoInput = document.getElementById('stop-photo');
+      const inputOdo = parseFloat(document.getElementById('stop-odo').value);
+      const location = document.getElementById('stop-location').value || 'Unspecified Stop';
+      const lastOdo = rideData.stops[rideData.stops.length - 1].odo;
+
+      if (photoInput.files.length === 0) {
+        alert('A receipt photo is required to save a stop.');
+        return;
+      }
+
+      const photoBase64 = await fileToBase64(photoInput.files[0]);
+      const currentOdo = inputOdo || lastOdo;
+      const legDist = currentOdo - lastOdo;
+
+      rideData.stops.push({
+        type: 'FUEL/STOP',
+        timestamp: Date.now(),
+        odo: currentOdo,
+        legDist: legDist > 0 ? legDist : 0,
+        location: location,
+        photoData: photoBase64,
+        gallons: '',
+        cost: '',
+        notes: ''
+      });
+
+      localStorage.setItem('iba_ride', JSON.stringify(rideData));
+      
+      document.getElementById('stop-odo').value = '';
+      document.getElementById('stop-location').value = '';
+      document.getElementById('stop-photo').value = '';
+      document.getElementById('odo-warning').style.display = 'none';
+      document.getElementById('stop-file-label').innerText = '📷 SNAP RECEIPT PHOTO';
+      document.getElementById('stop-file-label').style.borderColor = '#555';
+      document.getElementById('stop-file-label').style.color = '#fff';
+
+      updateDashboard();
+    }
+
+    function updateDashboard() {
+      for (let i = 1; i < rideData.stops.length; i++) {
+        rideData.stops[i].legDist = rideData.stops[i].odo - rideData.stops[i - 1].odo;
+      }
+
+      const lastStop = rideData.stops[rideData.stops.length - 1];
+      const totalDist = lastStop.odo - rideData.startOdo;
+
+      document.getElementById('total-dist').innerText = totalDist > 0 ? totalDist : 0;
+      document.getElementById('stop-count').innerText = rideData.stops.length - 1;
+
+      const listContainer = document.getElementById('log-list');
+      listContainer.innerHTML = '';
+
+      rideData.stops.forEach((stop, index) => {
+        const timeStr = new Date(stop.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const item = document.createElement('div');
+        item.className = 'stop-entry';
+        item.onclick = () => openEditModal(index);
+        item.innerHTML = `
+          <div class="stop-info">
+            <b>#${index} ${stop.type}</b> - ${timeStr}<br>
+            Odo: ${stop.odo} | Leg: +${stop.legDist} mi | Loc: ${stop.location}
+          </div>
+          <div class="chevron">❯</div>
+        `;
+        listContainer.appendChild(item);
+      });
+
+      updateTimer();
+    }
+
+    function openEditModal(index) {
+      const stop = rideData.stops[index];
+      document.getElementById('edit-index').value = index;
+      document.getElementById('edit-index-title').innerText = index;
+      document.getElementById('edit-location').value = stop.location || '';
+      document.getElementById('edit-odo').value = stop.odo;
+      document.getElementById('edit-gallons').value = stop.gallons || '';
+      document.getElementById('edit-cost').value = stop.cost || '';
+      document.getElementById('edit-notes').value = stop.notes || '';
+      
+      const imgPreview = document.getElementById('edit-photo-preview');
+      imgPreview.src = stop.photoData || '';
+
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    async function handlePhotoReplace() {
+      const input = document.getElementById('edit-photo-input');
+      if (input.files.length > 0) {
+        const newBase64 = await fileToBase64(input.files[0]);
+        document.getElementById('edit-photo-preview').src = newBase64;
+      }
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.add('hidden');
+    }
+
+    function saveEdit() {
+      const index = parseInt(document.getElementById('edit-index').value);
+      const newLoc = document.getElementById('edit-location').value;
+      const newOdo = parseFloat(document.getElementById('edit-odo').value);
+      const newGallons = document.getElementById('edit-gallons').value;
+      const newCost = document.getElementById('edit-cost').value;
+      const newNotes = document.getElementById('edit-notes').value;
+      const newPhotoData = document.getElementById('edit-photo-preview').src;
+
+      if (!newOdo) {
+        alert('Odometer reading cannot be empty.');
+        return;
+      }
+
+      rideData.stops[index].location = newLoc;
+      rideData.stops[index].odo = newOdo;
+      rideData.stops[index].gallons = newGallons;
+      rideData.stops[index].cost = newCost;
+      rideData.stops[index].notes = newNotes;
+      rideData.stops[index].photoData = newPhotoData;
+
+      if (index === 0) {
+        rideData.startOdo = newOdo;
+      }
+
+      localStorage.setItem('iba_ride', JSON.stringify(rideData));
+      closeEditModal();
+      updateDashboard();
+    }
+
+    function toggleSettings() {
+      document.getElementById('settings-area').classList.toggle('hidden');
+    }
+
+    function resetRide() {
+      if (confirm('Are you SURE you want to purge all current ride data? This action cannot be undone.')) {
+        localStorage.removeItem('iba_ride');
+        location.reload();
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
