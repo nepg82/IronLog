@@ -55,9 +55,19 @@
     </div>
   </div>
 
-  <!-- STEP 3: LOG STOP FORM -->
+<!-- STEP 3: LOG STOP FORM -->
   <div id="log-card" class="card hidden">
-    <h3>Log Fuel / Corner Stop</h3>
+    <h3>Log Stop Entry</h3>
+
+    <!-- NEW STOP TYPE DROPDOWN -->
+    <label for="stop-type">Stop Type</label>
+    <select id="stop-type" style="width: 100%; padding: 12px; margin-bottom: 12px; background: #101014; color: #fff; border: 1px solid #444; border-radius: 6px; font-family: inherit;">
+      <option value="FUEL">⛽ Fuel Stop</option>
+      <option value="FOOD/REST">🍔 Food / Rest Stop</option>
+      <option value="CORNER">📍 Corner / Waypoint</option>
+      <option value="FINISH">🏁 End Ride (Finish)</option>
+    </select>
+
     <label>Receipt Photo:
       <div class="file-input-wrapper">
         <span class="file-btn" id="stop-file-label">📷 SNAP RECEIPT PHOTO</span>
