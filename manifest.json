@@ -1,7 +1,7 @@
 {
-  "name": "IBA Digital Logbook",
-  "short_name": "IBA Logbook",
-  "description": "Offline-first SaddleSore 1000 Digital Logbook and Receipt Logger",
+  "name": "IronLog",
+  "short_name": "IronLog",
+  "description": "Iron Butt Logbook - Offline-first Digital Logbook and Receipt Logger",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",
@@ -9,12 +9,12 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "app-icons/app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "app-icons/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
